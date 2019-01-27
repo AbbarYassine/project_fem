@@ -119,8 +119,15 @@ def boundary_neumann(node1,node2,g_neumann,quad_degre):
 
     return bp
 
-def boundary_dirichlet():
-    return
+def boundary_dirichlet_A(elements,A,bord_in_tag):
+    Atemp = A.toarray()
+    for k in range(1,len(elements)):
+        if elements[k][1][0] == bord_in_tag:
+            Atemp[elements[k][2][0],:] = 0
+            Atemp[elements[k][2][0],elements[k][2][0]] = 1
+            Atemp[elements[k][2][1],:] = 0
+            Atemp[elements[k][2][1],elements[k][2][1]] = 1
+    return csr_matrix(A)
 
 def boundary_elemental_mass_matrix(node1,node2,cst):
     """Return 2*2 elemental matrix fourier-robin condition"""
@@ -130,12 +137,12 @@ def boundary_elemental_mass_matrix(node1,node2,cst):
     Me = cst*sigma*Mref
     return Me
 
-def assemble(nodes,elements,f,g_neumann,k,signe,quad_degre,cst,bound_out,bound_in,interior):
+def assemble(nodes,elements,f,g_neumann,u_dirichlet,k,signe,quad_degre,cst,bord_out_tag,bord_in_tag,interior):
     """assembly sparse Matrix A and second member B """
     rows = []
     cols = []
     vals = []
-    B = np.zeros(len(nodes)) # second member
+    B = np.zeros(len(nodes),dtype=complex) # second member
     for k in range(1,len(elements)+1):
         if elements[k][1][0] == interior:
             Me=elemental_mass_matrix(nodes[elements[k][2][0]],nodes[elements[k][2][1]],nodes[elements[k][2][2]],k)
@@ -148,13 +155,18 @@ def assemble(nodes,elements,f,g_neumann,k,signe,quad_degre,cst,bound_out,bound_i
                 glob_row = elements[k][2][row]
                 for col in range(3):
                     glob_col = elements[k][2][col]
-                    rows.append(glob_row)
-                    col.append(glob_col)
+                    rows.append(glob_row-1)
+                    cols.append(glob_col-1)
                     vals.append(Me[row,col]+Dep[row,col])
-                B[glob_row] += bp[row]         
-#        elif elements[i][1][0] == bound_in:
-        elif elements[k][1][0] == bound_out:
-            Me_bord = boundary_elemental_mass_matrix(nodes[elements[k][2][0]],nodes[elements[k][2][1]])
+                B[glob_row-1] += bp[row]         
+        elif elements[k][1][0] == bord_in_tag:
+            # neumann condition
+            x1 = nodes[elements[k][2][0]]
+            x2 = nodes[elements[k][2][1]]
+            B[elements[k][2][0]] = u_dirichlet(x1[0],x1[1])
+            B[elements[k][2][1]] = u_dirichlet(x2[0],x2[1])
+        elif elements[k][1][0] == bord_out_tag:
+            Me_bord = boundary_elemental_mass_matrix(nodes[elements[k][2][0]],nodes[elements[k][2][1]],cst)
             if g_neumann == 0:
                 bp_bord = [0.0,0.0]
             else:    
@@ -163,12 +175,10 @@ def assemble(nodes,elements,f,g_neumann,k,signe,quad_degre,cst,bound_out,bound_i
                 glob_row = elements[k][2][row]
                 for col in range(2):
                     glob_col = elements[k][2][col]
-                    rows.append(glob_row)
-                    col.append(glob_col)
+                    rows.append(glob_row-1)
+                    cols.append(glob_col-1)
                     vals.append(Me_bord[row,col])
-                B[glob_row] += bp_bord[row]
-        else:
-            raise ValueError('tag errors')     
+                B[glob_row-1] += bp_bord[row]    
     return  coo_matrix((vals, (rows, cols)), shape=(len(nodes), len(nodes))).tocsr(), B
 
 def solve(A,B):

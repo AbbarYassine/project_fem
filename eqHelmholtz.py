@@ -25,18 +25,19 @@ cst = complex(0,1)*k
 
 signe_mass = -1.
 
-bound_out = 12
+bord_out_tag = 12
 
-bound_in = 11
+bord_in_tag = 11
 
 interior = 10
 
 def uinc(x,y):
 	return -1*np.exp(complex(0,1)*k*(x*np.cos(alpha)+y*np.cos(alpha)))
 
-# assembly Matrix :	
+# assembly Matrix 
 
-A, B = fem.assemble(nodes,elements,f,g_neumann,k,signe_mass,quad_degre,cst,bound_out,bound_in,interior)
+A, B = fem.assemble(nodes,elements,f,g_neumann,uinc,k,signe_mass,quad_degre,cst,bord_out_tag,bord_in_tag,interior)
+A = fem.boundary_dirichlet_A(elements,A,bord_in_tag)
 u_sol = fem.solve(A,B)
 print(u_sol)
 
