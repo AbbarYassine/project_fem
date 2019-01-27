@@ -10,5 +10,7 @@ Comment lancer le projet : (exemple avec disques.geo)
 
   Fichiers:
   - Fichier eqHelmholtz.py : résolution du problème Helmholtz 
-  - Fichier routinesfem: les fonctions python : calcul de matrices fem, assemblage, résolution système ... 
-  - Fichiers.msh : données maillages gmsh 
+  - Fichier routinesfem.py: les fonctions python : calcul de matrices fem, assemblage, résolution système ... 
+  - Fichiers .msh : données maillages gmsh
+  - Fichier ReadMeshData.py : lecture des fichiers .msh
+  - Fichier createParaview : création des format .vtu (UnstructuredGrid) avec les données : solution u_sol + maillage 
