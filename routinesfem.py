@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from scipy.sparse import coo_matrix
 from scipy.sparse import csr_matrix
+from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import spsolve
 
 
@@ -120,7 +121,7 @@ def boundary_neumann(node1,node2,g_neumann,quad_degre):
     return bp
 
 def boundary_dirichlet_A(elements,A,bord_in_tag):
-    Atemp = A.toarray()
+    Atemp = lil_matrix(A)
     for k in range(1,len(elements)):
         if elements[k][1][0] == bord_in_tag:
             Atemp[elements[k][2][0],:] = 0

@@ -2,8 +2,13 @@ import numpy as np
 import math
 import routinesfem as fem
 from ReadMshData import GmshMesh
+from createParaview import createVtk
+import sys 
 
 # read msh file:
+
+#Meshfile = str(sys.argv[0])
+#print(sys.argv[1])
 
 Mesh = GmshMesh('disques.msh')
 nodes = Mesh.nodes
@@ -11,7 +16,7 @@ elements = Mesh.elements
 
 # functions & params
 
-alpha = math.pi
+alpha = math.pi/6
 
 k = 2*math.pi
 
@@ -38,7 +43,14 @@ def uinc(x,y):
 
 A, B = fem.assemble(nodes,elements,f,g_neumann,uinc,k,signe_mass,quad_degre,cst,bord_out_tag,bord_in_tag,interior)
 A = fem.boundary_dirichlet_A(elements,A,bord_in_tag)
-u_sol = fem.solve(A,B)
-print(u_sol)
 
-	
+# solve the problem 
+u_sol = fem.solve(A,B)
+
+# select triangle from elements
+triangles = {k: v for k, v in elements.iteritems() if v[0]==2}
+print(A.shape)
+print(len(u_sol))
+print(len(B))
+print(len(triangles))
+createVtk(u_sol, nodes, triangles,alpha)
