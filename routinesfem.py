@@ -56,21 +56,21 @@ def quadrature_segment(num_points):
 def elemental_mass_matrix(node1,node2,node3,k):
     """ Return 3x3 elemental mass matrix of a triangle element """
     detJk = abs((node2[0]-node1[0])*(node3[1]-node1[1]) - (node3[0]-node1[0])*(node2[1]-node1[1]))
-    Mref = np.matrix('2. 1. 1.; 1. 2. 1.; 1. 1. 2.')
-    Me = k**2*detJk*Mref 
+    Mref = np.matrix('2 1 1; 1 2 1; 1 1 2')
+    Me = k*k*(1/24)*detJk*Mref 
     return Me     
  
 def elemental_stiffness_matrix(node1,node2,node3,signe):
     """ return 3*3 elemental striffness matrix"""
-    detJk = abs((node2[0]-node1[0])*(node3[1]-node1[1]) - (node3[0]-node1[0])*(node2[1]-node1[1]))
-    Kp = 0.5*detJk
-    deltaphiref = np.matrix('-1. 1. 0.0;-1. 0. 1.')
+    detJk = (node2[0]-node1[0])*(node3[1]-node1[1]) - (node3[0]-node1[0])*(node2[1]-node1[1])
+    Kp = 0.5*abs(detJk)
+    deltaphiref = np.matrix('-1 1 0;-1 0 1')
     a = node3[1]-node1[1]
     b = node1[1]-node2[1]
     c = node1[0]-node3[0]
     d = node2[0]-node1[0]
     Bkp = 1./detJk*np.matrix([[a,b],[c,d]])
-    Dep = np.matrix('0.0 0.0 0.0; 0.0 0.0 0.0; 0.0 0.0 0.0')
+    Dep = np.matrix('0 0 0; 0 0 0; 0 0 0')
     for i in range(3):
         for j in range(3):
             Dep[i,j] = signe*Kp*(deltaphiref[:,j].T)*(Bkp.T)*(Bkp.H.T)*(deltaphiref[:,i].H.T)
@@ -80,7 +80,7 @@ def elemental_stiffness_matrix(node1,node2,node3,signe):
 
 def elemental_vector(node1,node2,node3,f):
     """ Return 3x1 f elemental vector of a triangle element """
-    detJk = abs((node2[0]-node1[0])*(node3[1]-node1[1]) - (node3[0]-node1[0])*(node2[1]-node1[1]))
+    detJk = (node2[0]-node1[0])*(node3[1]-node1[1]) - (node3[0]-node1[0])*(node2[1]-node1[1])
     bp = np.matrix('0.0 0.0 0.0').T
     node1 = node1[0:2]
     node2 = node2[0:2]
@@ -120,25 +120,20 @@ def boundary_neumann(node1,node2,g_neumann,quad_degre):
 
     return bp
 
-def boundary_dirichlet_A(elements,A,bord_in_tag):
-    Atemp = lil_matrix(A)
-    for k in range(1,len(elements)):
-        if elements[k][1][0] == bord_in_tag:
-            Atemp[elements[k][2][0],:] = 0
-            Atemp[elements[k][2][0],elements[k][2][0]] = 1
-            Atemp[elements[k][2][1],:] = 0
-            Atemp[elements[k][2][1],elements[k][2][1]] = 1
-    return csr_matrix(A)
-
 def boundary_elemental_mass_matrix(node1,node2,cst):
     """Return 2*2 elemental matrix fourier-robin condition"""
     sigma = np.linalg.norm(np.array(node2) -np.array(node1))
-    sigma = sigma
     Mref = 1./6*np.matrix('2 1;1 2')
     Me = cst*sigma*Mref
     return Me
 
-def assemble(nodes,elements,f,g_neumann,u_dirichlet,k,signe,quad_degre,cst,bord_out_tag,bord_in_tag,interior):
+ ##############################################################################################################""   
+#Assembler separement :
+
+
+
+
+def assemble_second_member(nodes,elements,f,interior):
     """assembly sparse Matrix A and second member B """
     rows = []
     cols = []
@@ -146,32 +141,21 @@ def assemble(nodes,elements,f,g_neumann,u_dirichlet,k,signe,quad_degre,cst,bord_
     B = np.zeros(len(nodes),dtype=complex) # second member
     for k in range(1,len(elements)+1):
         if elements[k][1][0] == interior:
-            Me=elemental_mass_matrix(nodes[elements[k][2][0]],nodes[elements[k][2][1]],nodes[elements[k][2][2]],k)
-            Dep=elemental_stiffness_matrix(nodes[elements[k][2][0]],nodes[elements[k][2][1]],nodes[elements[k][2][2]],signe)
-            if f == 0:
-                bp = [0.0,0.0,0.0]
-            else:
-                bp=elemental_vector(nodes[elements[k][2][0]],nodes[elements[k][2][1]],nodes[elements[k][2][2]],f)    
+            bp=elemental_vector(nodes[elements[k][2][0]],nodes[elements[k][2][1]],nodes[elements[k][2][2]],f)    
             for row in range(3):
                 glob_row = elements[k][2][row]
-                for col in range(3):
-                    glob_col = elements[k][2][col]
-                    rows.append(glob_row-1)
-                    cols.append(glob_col-1)
-                    vals.append(Me[row,col]+Dep[row,col])
-                B[glob_row-1] += bp[row]         
-        elif elements[k][1][0] == bord_in_tag:
-            # neumann condition
-            x1 = nodes[elements[k][2][0]]
-            x2 = nodes[elements[k][2][1]]
-            B[elements[k][2][0]] = u_dirichlet(x1[0],x1[1])
-            B[elements[k][2][1]] = u_dirichlet(x2[0],x2[1])
-        elif elements[k][1][0] == bord_out_tag:
-            Me_bord = boundary_elemental_mass_matrix(nodes[elements[k][2][0]],nodes[elements[k][2][1]],cst)
-            if g_neumann == 0:
-                bp_bord = [0.0,0.0]
-            else:    
-                bp_bord = boundary_neumann(nodes[elements[k][2][0]],nodes[elements[k][2][1]])
+                B[glob_row-1] += bp[row]            
+    return  B
+
+def assemble_neumann_B(nodes,elements,g_neumann,quad_degre):
+    """assembly sparse Matrix A and second member neumann conditions """
+    rows = []
+    cols = []
+    vals = []
+    B = np.zeros(len(nodes),dtype=complex) # second member
+    for k in range(1,len(elements)+1):
+        if elements[k][1][0] == bord_out_tag:
+            bp_bord = boundary_neumann(nodes[elements[k][2][0]],nodes[elements[k][2][1]])
             for row in range(2):
                 glob_row = elements[k][2][row]
                 for col in range(2):
@@ -180,8 +164,89 @@ def assemble(nodes,elements,f,g_neumann,u_dirichlet,k,signe,quad_degre,cst,bord_
                     cols.append(glob_col-1)
                     vals.append(Me_bord[row,col])
                 B[glob_row-1] += bp_bord[row]    
-    return  coo_matrix((vals, (rows, cols)), shape=(len(nodes), len(nodes))).tocsr(), B
+    return B    
+
+#Assembler separement :     
+
+def assem_mass(nodes,elements,k,interior):
+    rows = []
+    cols = []
+    vals = []
+    for k in range(1,len(elements)+1):
+        if elements[k][1][0] == interior:
+            Me=elemental_mass_matrix(nodes[elements[k][2][0]],nodes[elements[k][2][1]],nodes[elements[k][2][2]],k)   
+            for row in range(3):
+                glob_row = elements[k][2][row]
+                for col in range(3):
+                    glob_col = elements[k][2][col]
+                    rows.append(glob_row-1)
+                    cols.append(glob_col-1)
+                    vals.append(Me[row,col])
+    Mass = coo_matrix((vals, (rows, cols)), shape=(len(nodes), len(nodes)),dtype=complex).tocsr()                
+    return Mass
+
+
+def assem_stiffness(nodes,elements,signe,interior):
+    """assembly sparse Matrix A and second member B """
+    rows = []
+    cols = []
+    vals = []
+    B = np.zeros(len(nodes),dtype=complex) # second member
+    for k in range(1,len(elements)+1):
+        if elements[k][1][0] == interior:
+            Dep=elemental_stiffness_matrix(nodes[elements[k][2][0]],nodes[elements[k][2][1]],nodes[elements[k][2][2]],signe)    
+            for row in range(3):
+                glob_row = elements[k][2][row]
+                for col in range(3):
+                    glob_col = elements[k][2][col]
+                    rows.append(glob_row-1)
+                    cols.append(glob_col-1)
+                    vals.append(Dep[row,col])
+    D = coo_matrix((vals, (rows, cols)), shape=(len(nodes), len(nodes)),dtype=complex).tocsr()
+    return D                 
+
+def assem_mass_bord(nodes,elements,cst,bord_out_tag):
+    rows = []
+    cols = []
+    vals = []
+    B = np.zeros(len(nodes),dtype=complex) # second member
+    for k in range(1,len(elements)+1):
+        if elements[k][1][0] == bord_out_tag:
+            Me_bord = boundary_elemental_mass_matrix(nodes[elements[k][2][0]],nodes[elements[k][2][1]],cst)    
+            for row in range(2):
+                glob_row = elements[k][2][row]
+                for col in range(2):
+                    glob_col = elements[k][2][col]
+                    rows.append(glob_row-1)
+                    cols.append(glob_col-1)
+                    vals.append(Me_bord[row,col])
+    M_bord = coo_matrix((vals, (rows, cols)), shape=(len(nodes), len(nodes)),dtype=complex).tocsr()
+    return M_bord
+
+def assem_vectorB_dirichlet(nodes,elements,u_dirichlet,bord_in_tag):
+    B = np.zeros(len(nodes),dtype=complex) # second member
+    for k in range(1,len(elements)+1):
+        if elements[k][1][0] == bord_in_tag:
+            # neumann condition
+            x1 = nodes[elements[k][2][0]]
+            x2 = nodes[elements[k][2][1]]
+            B[elements[k][2][0]-1] = u_dirichlet(x1[0],x1[1])
+            B[elements[k][2][1]-1] = u_dirichlet(x2[0],x2[1])
+    return B
+
+def boundary_dirichlet_A(elements,M,M_bord,D,bord_in_tag):
+    A = lil_matrix(M+M_bord+D)
+    for k in range(1,len(elements)):
+        if elements[k][1][0] == bord_in_tag:
+            A[elements[k][2][0],:] = 0
+            A[elements[k][2][0],elements[k][2][0]] = 1
+            A[elements[k][2][1],:] = 0
+            A[elements[k][2][1],elements[k][2][1]] = 1
+    return csr_matrix(A)                    
 
 def solve(A,B):
     u_sol = spsolve(A, B)
     return u_sol
+def solve_array(A,B):
+    u_sol = np.linalg.solve(A.toarray(), B)
+    return u_sol  

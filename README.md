@@ -4,8 +4,9 @@
 Comment lancer le projet : (exemple avec disques.geo)
   1) gmsh Maillage/disques.geo -2 #pour le maillage dans le dossier Maillage 
   OU placer votre maillage directement dans le dossier Maillage si vous l'avez déjà
-  2) python eqHelmholz.py #pour lancer le fichier disques.msh 
-  3) paraview Output_alpha=alphavalue.vtu #pour visualiser le résultat sous paraview
+  2) python eqHelmholz.py meshfile tag_(interieur) (tag_bord_interieur) (tag_bord_exterieur) #pour lancer
+  		ex : python eqHelmholz.py disques.mesh 10 11 12 
+  3) paraview visualization.vtu #pour visualiser le résultat sous paraview
   OU ouvrir l'application paraview, charger le fichier puis appuyer sur apply
 
   Fichiers:

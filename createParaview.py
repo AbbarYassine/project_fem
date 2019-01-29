@@ -4,9 +4,9 @@ import numpy as np
 
 import time
 
-def createVtk(u_sol, nodes, triangles,alpha):
+def createVtk(u_sol, nodes, triangles):
 	"""Create paraview file format UnstructuredGrid"""
-	fichier="OutputVtu_alpha="+str(alpha)+".vtu"
+	fichier="visualisation.vtu"
 	file = open(fichier,"w")
 	file.write('<VTKFile type="UnstructuredGrid" version="1.0" byte_order="LittleEndian" header_type="UInt64">\n')
 	file.write("<UnstructuredGrid>\n")
