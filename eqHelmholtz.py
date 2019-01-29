@@ -20,12 +20,6 @@ alpha = (math.pi)
 
 k = 2*math.pi
 
-g_neumann = 0
-
-quad_degre = 2
-
-f = 0
-
 cst = complex(0,1)*k
 
 signe_stiffness = -1.
