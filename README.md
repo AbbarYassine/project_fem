@@ -1,12 +1,13 @@
-					Projet réalisé dans le cadre du cours de maillage et éléments finis MAIN5 (Polytech Sorbonne)
+					Projet réalisé par Yassine ABBAR dans le cadre du cours de maillage et éléments finis MAIN5 (Polytech Sorbonne)
 
 
 Comment lancer le projet : (exemple avec disques.geo)
   1) gmsh Maillage/disques.geo -2 #pour le maillage dans le dossier Maillage 
   OU placer votre maillage directement dans le dossier Maillage si vous l'avez déjà
-  2) python eqHelmholz.py meshfile tag_(interieur) (tag_bord_interieur) (tag_bord_exterieur) #pour lancer
-  		ex : python eqHelmholz.py disques.mesh 10 11 12 
-  3) paraview visualization.vtu #pour visualiser le résultat sous paraview
+  2) python eqHelmholz.py meshfile {tag_(interieur} {tag_bord_interieu} {tag_bord_exterieur} #pour lancer
+  		ex1 : python eqHelmholtz.py disques.msh 10 11 12 
+  		ex2 : python eqHelmholtz.py sous_marin.msh 10 11 12 
+  3) paraview visualisation_alpha=3.14_k=0.8.vtu #pour visualiser le résultat sous paraview
   OU ouvrir l'application paraview, charger le fichier puis appuyer sur apply
 
   Fichiers:
