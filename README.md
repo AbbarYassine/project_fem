@@ -2,8 +2,8 @@
 
 
 Comment lancer le projet : (exemple avec disques.geo)
-  1) gmsh Maillage/disques.geo -2 #pour le maillage dans le dossier Maillage 
-  OU placer votre maillage directement dans le dossier Maillage si vous l'avez déjà
+  1) gmsh disques.geo -2 #pour générer le maillage 
+  OU placer votre maillage directement dans le dossier du projet si vous l'avez déjà
   2) python eqHelmholz.py meshfile {tag_(interieur} {tag_bord_interieu} {tag_bord_exterieur} #pour lancer
   		ex1 : python eqHelmholtz.py disques.msh 10 11 12 
   		ex2 : python eqHelmholtz.py sous_marin.msh 10 11 12 
