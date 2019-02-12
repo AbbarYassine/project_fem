@@ -16,13 +16,13 @@ elements = Mesh.elements
 
 #functions & params
 
-alpha = 2*math.pi
+alpha = math.pi/6.
 
-k = 2*math.pi
+k = 6
 
-cst = complex(0,1)*k
+cst = -np.complex(0,1)*k
 
-signe_stiffness = -1.
+signe_stiffness = -1
 
 bord_out_tag = int(sys.argv[4])
 

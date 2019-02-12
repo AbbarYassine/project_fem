@@ -1,6 +1,6 @@
 
 N = 15; 
-k = 2*Pi; 
+k = 20; 
 h = 2*Pi/(k*N);
 
 //Garder finesse du maillage

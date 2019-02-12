@@ -58,10 +58,10 @@ def elemental_mass_matrix(node1,node2,node3):
     """ Return 3x3 elemental mass matrix of a triangle element """
     Kp = abs(((node2[0]-node1[0])*(node3[1]-node1[1]) - (node3[0]-node1[0])*(node2[1]-node1[1]))/2)
     Mref = np.matrix('2.0 1.0 1.0; 1.0 2.0 1.0; 1.0 1.0 2.0')
-    Me = Kp*(1/.12)*Mref 
+    Me = Kp/12.*Mref 
     return Me     
  
-def elemental_stiffness_matrix(node1,node2,node3):
+def elemental_stiffness_matrix(node1,node2,node3,signe):
     """ return 3*3 elemental striffness matrix"""
     detJk = (node2[0]-node1[0])*(node3[1]-node1[1]) - (node3[0]-node1[0])*(node2[1]-node1[1])
     Kp = 0.5*abs(detJk)
@@ -70,11 +70,11 @@ def elemental_stiffness_matrix(node1,node2,node3):
     b = node1[1]-node2[1]
     c = node1[0]-node3[0]
     d = node2[0]-node1[0]
-    Bkp = 1./detJk*np.matrix([[a,b],[c,d]])
+    Bkp = 1./(2.*Kp)*np.matrix([[a,b],[c,d]])
     Dep = np.matrix('0.0 0.0 0.0; 0.0 0.0 0.0; 0.0 0.0 0.0')
     for i in range(3):
         for j in range(3):
-            Dep[i,j] = Kp*(deltaphiref[:,j].T)*(Bkp.T)*(Bkp.H.T)*(deltaphiref[:,i].H.T)
+            Dep[i,j] = signe*Kp*(deltaphiref[:,j].getT())*(Bkp.getT())*(Bkp)*(deltaphiref[:,i])
     return Dep        
 
 	    
@@ -123,9 +123,9 @@ def boundary_neumann(node1,node2,g_neumann,quad_degre):
 
 def boundary_elemental_mass_matrix(node1,node2):
     """Return 2*2 elemental matrix fourier-robin condition"""
-    sigma = np.linalg.norm(np.array(node2) -np.array(node1))
-    Mref = 1./6*np.matrix('2 1;1 2')
-    Me = sigma*Mref
+    sigma = np.linalg.norm(np.array(node2)-np.array(node1))
+    Mref = np.matrix('2 1;1 2')
+    Me = sigma/6*Mref
     return Me
 
  ##############################################################################################################""   
@@ -183,7 +183,7 @@ def assem_mass(nodes,elements,k,interior):
                     glob_col = elements[p][2][col]
                     rows.append(glob_row-1)
                     cols.append(glob_col-1)
-                    vals.append(k*k*Me[row,col])
+                    vals.append(np.complex(1,0)*k*k*Me[row,col])
     Mass = coo_matrix((vals, (rows,cols)), shape=(len(nodes), len(nodes)),dtype=complex).tocsr()                
     return Mass
 
@@ -195,14 +195,14 @@ def assem_stiffness(nodes,elements,signe,interior):
     vals = []
     for p in range(1,len(elements)+1):
         if elements[p][1][0] == interior:
-            Dep=elemental_stiffness_matrix(nodes[elements[p][2][0]],nodes[elements[p][2][1]],nodes[elements[p][2][2]])    
+            Dep=elemental_stiffness_matrix(nodes[elements[p][2][0]],nodes[elements[p][2][1]],nodes[elements[p][2][2]],signe)    
             for row in range(3):
                 glob_row = elements[p][2][row]
                 for col in range(3):
                     glob_col = elements[p][2][col]
                     rows.append(glob_row-1)
                     cols.append(glob_col-1)
-                    vals.append(signe*Dep[row,col])
+                    vals.append(Dep[row,col])
     D = coo_matrix((vals, (rows, cols)), shape=(len(nodes), len(nodes)),dtype=complex).tocsr()
     return D               
 
@@ -230,8 +230,8 @@ def assem_vectorB_dirichlet(nodes,elements,u_dirichlet,bord_in_tag):
             # neumann condition
             x1 = nodes[elements[p][2][0]]
             x2 = nodes[elements[p][2][1]]
-            B[elements[p][2][0]-1] = u_dirichlet(x1[0],x1[1])
-            B[elements[p][2][1]-1] = u_dirichlet(x2[0],x2[1])
+            B[elements[p][2][0]] = u_dirichlet(x1[0],x1[1])
+            B[elements[p][2][1]] = u_dirichlet(x2[0],x2[1])
     return B
 
 def boundary_dirichlet_A(elements,D,M,M_bord,bord_in_tag):
